@@ -15,6 +15,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -174,18 +175,24 @@ fun PlayerScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(
-                        horizontalAlignment = Alignment.Start
+                        horizontalAlignment = Alignment.Start,
+                        modifier = Modifier.weight(1f) // 🔹 Para que respete el espacio disponible
                     ) {
                         Text(
                             text = s.name,
                             color = Color.White,
                             fontSize = 24.sp,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            maxLines = 1, // 🔹 Máximo una línea
+                            overflow = TextOverflow.Ellipsis, // 🔹 Ocultar lo que se pase con ...
+                            modifier = Modifier.fillMaxWidth(0.9f) // 🔹 Ajusta el ancho disponible
                         )
                         Text(
                             text = s.artist,
                             color = Color.LightGray,
-                            fontSize = 16.sp
+                            fontSize = 16.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 

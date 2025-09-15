@@ -90,7 +90,7 @@ private fun HomeContent(navController: NavController, homeViewModel: HomeViewMod
                 }
             }
         }
-    ) {
+    ) { innerPadding ->
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val gradient = Brush.linearGradient(
                 colorStops = arrayOf(
@@ -120,12 +120,16 @@ private fun HomeContent(navController: NavController, homeViewModel: HomeViewMod
                     0 -> MisListasContent(
                         navController = navController,
                         homeViewModel = homeViewModel,
-                        modifier = Modifier.padding(top = 80.dp)
+                        modifier = Modifier
+                            .padding(top = 80.dp)
+                            .padding(innerPadding)
                     )
                     1 -> SearchContent(
                         navController = navController,
                         homeViewModel = homeViewModel,
-                        modifier = Modifier.padding(top = 80.dp)
+                        modifier = Modifier
+                            .padding(top = 80.dp)
+                            .padding(innerPadding)
                     )
                 }
             }
@@ -154,7 +158,7 @@ fun MisListasContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(550.dp),
+                    .fillMaxHeight(0.98f), // lista más pequeña
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -168,20 +172,17 @@ fun MisListasContent(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(550.dp),
+                    .fillMaxHeight(0.6f), // lista más pequeña
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(homeViewModel.playlists) { playlist ->
                     Button(
                         onClick = {
-                            // Guardar id y nombre de la playlist en SharedPreferences
                             val prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
                             prefs.edit()
                                 .putInt("playlistID", playlist.id)
                                 .putString("playlistName", playlist.name)
                                 .apply()
-
-                            // Navegar a la pantalla de la playlist
                             navController.navigate("playlist")
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF121212)),
@@ -270,7 +271,11 @@ fun MisListasContent(
 }
 
 @Composable
-fun SearchContent(homeViewModel: HomeViewModel, navController: NavController, modifier: Modifier = Modifier) {
+fun SearchContent(
+    homeViewModel: HomeViewModel,
+    navController: NavController,
+    modifier: Modifier = Modifier
+) {
     val filteredSongsList by remember(homeViewModel.songs, homeViewModel.searchQuery) {
         derivedStateOf {
             val query = homeViewModel.searchQuery.trim().lowercase()
@@ -281,7 +286,7 @@ fun SearchContent(homeViewModel: HomeViewModel, navController: NavController, mo
         }
     }
 
-    val context = LocalContext.current // Obtener contexto aquí
+    val context = LocalContext.current
 
     Column(modifier = modifier.fillMaxSize()) {
         TextField(
@@ -298,7 +303,7 @@ fun SearchContent(homeViewModel: HomeViewModel, navController: NavController, mo
 
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxHeight(0.98f) // lista más pequeña
         ) {
             items(filteredSongsList) { song ->
                 Row(
@@ -308,11 +313,8 @@ fun SearchContent(homeViewModel: HomeViewModel, navController: NavController, mo
                         .background(Color(0xFF121212), RoundedCornerShape(8.dp))
                         .padding(8.dp)
                         .clickable {
-                            // Guardar ID de la canción en SharedPreferences
                             val prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
                             prefs.edit().putInt("songID", song.id).apply()
-
-                            // Navegar a PlayerScreen
                             navController.navigate("player")
                         },
                     verticalAlignment = Alignment.CenterVertically
