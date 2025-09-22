@@ -159,7 +159,7 @@ fun MisListasContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.98f), // lista más pequeña
+                    .fillMaxHeight(0.8f), // lista más pequeña
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -173,7 +173,7 @@ fun MisListasContent(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.6f), // lista más pequeña
+                    .fillMaxHeight(0.8f), // lista más pequeña
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(homeViewModel.playlists) { playlist ->
@@ -209,8 +209,6 @@ fun MisListasContent(
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(10.dp))
 
         Button(
             onClick = { showDialog = true },
