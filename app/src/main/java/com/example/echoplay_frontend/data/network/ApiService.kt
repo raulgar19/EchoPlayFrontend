@@ -5,6 +5,8 @@ import com.example.echoplay_frontend.data.models.Playlist
 import com.example.echoplay_frontend.data.models.Song
 import com.example.echoplay_frontend.data.models.SongToAdd
 import com.example.echoplay_frontend.data.models.User
+import com.example.echoplay_frontend.data.models.VersionResponse
+import retrofit2.Call
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -44,4 +46,7 @@ interface ApiService {
         @Path("playlistId") playlistId: Int,
         @Path("songId") songId: Int
     )
+
+    @GET("app/version")
+    fun getLatestVersion(): Call<VersionResponse>
 }
