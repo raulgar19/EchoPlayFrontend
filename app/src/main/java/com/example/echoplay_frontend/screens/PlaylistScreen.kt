@@ -150,7 +150,6 @@ fun PlaylistScreen(navController: NavController, playlistViewModel: PlaylistView
                                     }
                                     IconButton(
                                         onClick = {
-                                            // Llamada para eliminar la canción de la playlist
                                             playlistViewModel.removeSongFromPlaylist(song.id)
                                         }
                                     ) {
