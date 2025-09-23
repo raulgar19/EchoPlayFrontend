@@ -45,10 +45,9 @@ class MainActivity : ComponentActivity() {
                 Surface(color = MaterialTheme.colorScheme.background) {
                     AppNavigation()
 
-                    // 🔔 Diálogo inicial (solo botón de actualizar)
                     updateAvailable?.let { version ->
                         AlertDialog(
-                            onDismissRequest = { /* No se puede cerrar tocando fuera */ },
+                            onDismissRequest = { },
                             title = { Text("Nueva versión disponible") },
                             text = { Text("Se ha detectado la versión $version de EchoPlay. Debes actualizar para continuar.") },
                             confirmButton = {
@@ -62,7 +61,6 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // 🔔 Diálogo final con resultado
                     updateResult?.let { result ->
                         AlertDialog(
                             onDismissRequest = { updateResult = null },
@@ -88,7 +86,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 if (response.isSuccessful) {
                     val latest = response.body()
-                    if (latest != null && latest.latest_version != Version.CURRENT) {
+                    if (latest != null && isVersionNewer(latest.latest_version, Version.CURRENT)) {
                         updateAvailable = latest.latest_version
                         apkUrl = latest.apk_url
                     }
@@ -99,6 +97,21 @@ class MainActivity : ComponentActivity() {
                 updateResult = "Error al verificar versión: ${t.message}"
             }
         })
+    }
+
+    // 🔹 Función que compara versiones semánticas
+    private fun isVersionNewer(latest: String, current: String): Boolean {
+        val latestParts = latest.split(".").map { it.toIntOrNull() ?: 0 }
+        val currentParts = current.split(".").map { it.toIntOrNull() ?: 0 }
+        val maxLength = maxOf(latestParts.size, currentParts.size)
+
+        for (i in 0 until maxLength) {
+            val l = latestParts.getOrElse(i) { 0 }
+            val c = currentParts.getOrElse(i) { 0 }
+            if (l > c) return true
+            if (l < c) return false
+        }
+        return false
     }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
@@ -137,7 +150,6 @@ class MainActivity : ComponentActivity() {
                 }
                 startActivity(installIntent)
 
-                // 🧹 Borrar archivo tras lanzar instalación
                 val deleted = file.delete()
                 updateResult = if (deleted) {
                     "La actualización se instaló correctamente."
