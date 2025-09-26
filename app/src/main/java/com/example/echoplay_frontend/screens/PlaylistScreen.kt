@@ -124,6 +124,7 @@ fun PlaylistScreen(navController: NavController, playlistViewModel: PlaylistView
                                         .clickable {
                                             val prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
                                             prefs.edit().putInt("songID", song.id).apply()
+                                            MusicService.isPlaylistMode = false
                                             navController.navigate("player")
                                         }
                                         .padding(horizontal = 12.dp),

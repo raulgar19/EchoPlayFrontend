@@ -315,6 +315,7 @@ fun SearchContent(
                         .clickable {
                             val prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
                             prefs.edit().putInt("songID", song.id).apply()
+                            MusicService.isPlaylistMode = false
                             navController.navigate("player")
                         },
                     verticalAlignment = Alignment.CenterVertically
