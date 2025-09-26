@@ -87,10 +87,12 @@ fun PlaylistScreen(navController: NavController, playlistViewModel: PlaylistView
 
                         Row {
                             IconButton(onClick = {
-                                MusicService.playlist = songs
-                                MusicService.currentIndex = 0
-                                MusicService.isPlaylistMode = true
-                                navController.navigate("player")
+                                if (songs.isNotEmpty()) {
+                                    MusicService.playlist = songs
+                                    MusicService.currentIndex = 0
+                                    MusicService.isPlaylistMode = true
+                                    navController.navigate("player")
+                                }
                             }) {
                                 Icon(Icons.Filled.PlayArrow, contentDescription = "Play", tint = Color.White)
                             }
