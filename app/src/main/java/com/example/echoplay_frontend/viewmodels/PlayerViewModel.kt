@@ -1,5 +1,6 @@
 package com.example.echoplay_frontend.viewmodels
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.media.MediaPlayer
 import androidx.compose.runtime.getValue
@@ -23,6 +24,10 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     var playlists by mutableStateOf<List<Playlist>>(emptyList())
         private set
 
+    // Nueva variable para guardar la playlist actual
+    var currentPlaylist by mutableStateOf<List<Song>?>(null)
+        private set
+
     var isLoading by mutableStateOf(true)
         private set
 
@@ -36,8 +41,26 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     private val userId = prefs.getInt("userID", -1)
 
     init {
-        if (songId != -1) loadSong()
-        else isLoading = false
+        isLoading = true
+
+        if (MusicService.isPlaylistMode) {
+            // 🔹 Cargar playlist desde MusicService
+            currentPlaylist = MusicService.playlist
+
+            // 🔹 Asignar la primera canción si currentIndex es válido
+            if (currentPlaylist != null && currentPlaylist!!.isNotEmpty()) {
+                // Asegurarse de que currentIndex esté en 0
+                if (MusicService.currentIndex >= currentPlaylist!!.size) {
+                    MusicService.currentIndex = 0
+                }
+                song = currentPlaylist!![MusicService.currentIndex]
+            }
+
+            isLoading = false
+        } else {
+            if (songId != -1) loadSong()
+            else isLoading = false
+        }
 
         loadPlaylists()
     }
@@ -79,35 +102,35 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun playSong() {
-        val s = song ?: return
         val mp: MediaPlayer = MusicService.mediaPlayer ?: MediaPlayer().also { MusicService.mediaPlayer = it }
 
-        // Si la canción actual ya es la que suena y está pausada, simplemente reproducir desde la posición actual
-        if (MusicService.currentFile == s.file && !mp.isPlaying) {
-            mp.start()
-            MusicService.isPlaying = true
-            return
-        }
-
-        // Si la canción actual ya está sonando, no hacer nada
-        if (MusicService.currentFile == s.file && mp.isPlaying) return
+        val s = if (MusicService.isPlaylistMode) {
+            MusicService.playlist.getOrNull(MusicService.currentIndex) ?: return
+        } else song ?: return
 
         try {
-            // Reiniciar el MediaPlayer solo si es una canción diferente
+            MusicService.isPrepared = false
             if (mp.isPlaying) mp.stop()
             mp.reset()
 
-            MusicService.currentFile = s.file
+            mp.setDataSource(s.file)
             mp.isLooping = MusicService.isLoopingEnabled
 
-            mp.setDataSource(s.file)
             mp.setOnPreparedListener {
+                MusicService.isPrepared = true
+                MusicService.currentFile = s.file
                 it.start()
                 MusicService.isPlaying = true
             }
+
             mp.setOnCompletionListener {
+                if (!MusicService.isPrepared) return@setOnCompletionListener
                 MusicService.isPlaying = false
                 MusicService.currentFile = null
+
+                if (MusicService.isPlaylistMode) {
+                    playNextInPlaylist()
+                }
             }
 
             mp.prepareAsync()
@@ -116,13 +139,18 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun playSongAtIndex(index: Int) {
-        if (MusicService.playlist.isEmpty()) return
-        // Aseguramos que el índice es circular
-        val safeIndex = (index % MusicService.playlist.size + MusicService.playlist.size) % MusicService.playlist.size
-        song = MusicService.playlist[safeIndex]
-        MusicService.currentIndex = safeIndex
-        playSong()
+    private fun playNextInPlaylist() {
+        val nextIndex = MusicService.currentIndex + 1
+        if (nextIndex < MusicService.playlist.size) {
+            MusicService.currentIndex = nextIndex
+            song = MusicService.playlist[nextIndex]
+
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                playSong()
+            }
+        } else {
+            MusicService.isPlaylistMode = false
+        }
     }
 
     fun pauseSong() {
@@ -162,13 +190,27 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
         isLooping = MusicService.isLoopingEnabled
     }
 
-    fun nextSong() {
-        val nextIndex = MusicService.currentIndex + 1
-        playSongAtIndex(nextIndex)
+    fun playNext() {
+        if (MusicService.isPlaylistMode && currentPlaylist != null && currentPlaylist!!.isNotEmpty()) {
+            // 🔹 Avanzar al siguiente índice circular
+            MusicService.currentIndex = (MusicService.currentIndex + 1) % currentPlaylist!!.size
+            song = currentPlaylist!![MusicService.currentIndex]
+            playSong()
+        } else {
+            stopSong()
+        }
     }
 
-    fun previousSong() {
-        val prevIndex = MusicService.currentIndex - 1
-        playSongAtIndex(prevIndex)
+    fun playPrevious() {
+        if (MusicService.isPlaylistMode && currentPlaylist != null && currentPlaylist!!.isNotEmpty()) {
+            // 🔹 Retroceder al índice anterior circular
+            MusicService.currentIndex =
+                if (MusicService.currentIndex - 1 < 0) currentPlaylist!!.size - 1
+                else MusicService.currentIndex - 1
+            song = currentPlaylist!![MusicService.currentIndex]
+            playSong()
+        } else {
+            song?.let { playSong() }
+        }
     }
 }

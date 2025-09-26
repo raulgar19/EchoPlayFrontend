@@ -21,11 +21,11 @@ class MusicService : Service() {
         // 🔹 Nueva variable global para loop
         var isLoopingEnabled: Boolean = false
 
-        // 🔹 Lista global de canciones
-        var playlist: MutableList<Song> = mutableListOf()
-
-        // 🔹 Índice de la canción actual
+        var playlist: List<Song> = listOf()
         var currentIndex: Int = 0
+        var isPlaylistMode: Boolean = false
+
+        var isPrepared: Boolean = false
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

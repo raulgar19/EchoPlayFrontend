@@ -245,7 +245,7 @@ fun PlayerScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(32.dp)
                     ) {
-                        IconButton(onClick = { playerViewModel.previousSong() }) {
+                        IconButton(onClick = { playerViewModel.playPrevious() }) {
                             Icon(
                                 imageVector = Icons.Filled.SkipPrevious,
                                 contentDescription = "Anterior",
@@ -272,7 +272,7 @@ fun PlayerScreen(
                             )
                         }
 
-                        IconButton(onClick = { playerViewModel.nextSong() }) {
+                        IconButton(onClick = { playerViewModel.playNext() }) {
                             Icon(
                                 imageVector = Icons.Filled.SkipNext,
                                 contentDescription = "Siguiente",
