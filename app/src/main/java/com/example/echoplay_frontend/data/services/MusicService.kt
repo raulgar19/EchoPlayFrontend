@@ -17,15 +17,13 @@ class MusicService : Service() {
         var mediaPlayer: MediaPlayer? = null
         var isPlaying: Boolean = false
         var currentFile: String? = null
-
-        // 🔹 Nueva variable global para loop
         var isLoopingEnabled: Boolean = false
-
         var playlist: List<Song> = listOf()
+        var shufflePlaylist: List<Song> = emptyList()
         var currentIndex: Int = 0
         var isPlaylistMode: Boolean = false
-
         var isPrepared: Boolean = false
+        var isShuffleMode: Boolean = false
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

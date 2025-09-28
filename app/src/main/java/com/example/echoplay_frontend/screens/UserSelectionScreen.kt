@@ -47,9 +47,11 @@ fun UserSelectionScreen(
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val gradient = Brush.linearGradient(
             colorStops = arrayOf(
-                0.0f to Color.Red,
-                0.3f to Color.Red,
-                1.0f to Color.Black
+                0.0f to Color(0xFF1595FF), // Azul claro
+                0.25f to Color(0xFF4442FF), // Azul intenso
+                0.5f to Color(0xFF8F12FF),  // Violeta brillante
+                0.75f to Color(0xFF611FFE), // Violeta oscuro
+                1.0f to Color(0xFF000519)   // Azul casi negro
             ),
             start = Offset(0f, 0f),
             end = Offset(maxWidth.value, maxHeight.value)
@@ -77,7 +79,7 @@ fun UserSelectionScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = Color.Red)
+                        CircularProgressIndicator(color = Color(0xFF8F12FF))
                     }
                 } else {
                     LazyVerticalGrid(

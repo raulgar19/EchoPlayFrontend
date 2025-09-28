@@ -42,13 +42,16 @@ fun PlaylistScreen(navController: NavController, playlistViewModel: PlaylistView
     val playlistName = playlistViewModel.playlistName
     val isLoading = playlistViewModel.isLoading
     val context = LocalContext.current
+    var isShuffleMode by remember { mutableStateOf(MusicService.isShuffleMode) }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val gradient = Brush.linearGradient(
             colorStops = arrayOf(
-                0.0f to Color.Red,
-                0.3f to Color.Red,
-                1.0f to Color.Black
+                0.0f to Color(0xFF1595FF), // Azul claro
+                0.25f to Color(0xFF4442FF), // Azul intenso
+                0.5f to Color(0xFF8F12FF),  // Violeta brillante
+                0.75f to Color(0xFF611FFE), // Violeta oscuro
+                1.0f to Color(0xFF000519)   // Azul casi negro
             ),
             start = Offset(0f, 0f),
             end = Offset(maxWidth.value, maxHeight.value)
@@ -62,7 +65,7 @@ fun PlaylistScreen(navController: NavController, playlistViewModel: PlaylistView
         ) {
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color.White)
+                    CircularProgressIndicator(color = Color(0xFF8F12FF))
                 }
             } else {
                 Column(modifier = Modifier.fillMaxSize()) {
@@ -86,6 +89,18 @@ fun PlaylistScreen(navController: NavController, playlistViewModel: PlaylistView
                         )
 
                         Row {
+                            IconButton(onClick = {
+                                if (songs.isNotEmpty()) {
+                                    isShuffleMode = !isShuffleMode
+                                    MusicService.isShuffleMode = isShuffleMode
+                                }
+                            }) {
+                                Icon(
+                                    Icons.Filled.Shuffle,
+                                    contentDescription = "Shuffle",
+                                    tint = if (isShuffleMode) Color(0xFF000519) else Color.White
+                                )
+                            }
                             IconButton(onClick = {
                                 if (songs.isNotEmpty()) {
                                     MusicService.playlist = songs

@@ -115,7 +115,7 @@ fun PlayerScreen(
                 confirmButton = {
                     TextButton(
                         onClick = { showPlaylistDialog = false },
-                        colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF8F12FF))
                     ) {
                         Text("Cancelar", fontSize = 16.sp)
                     }
@@ -222,8 +222,8 @@ fun PlayerScreen(
                     },
                     valueRange = 0f..100f,
                     colors = SliderDefaults.colors(
-                        thumbColor = Color.Red,
-                        activeTrackColor = Color.Red,
+                        thumbColor = Color(0xFF8F12FF),
+                        activeTrackColor = Color(0xFF8F12FF),
                         inactiveTrackColor = Color.DarkGray
                     ),
                     modifier = Modifier.height(40.dp)
@@ -237,8 +237,13 @@ fun PlayerScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    IconButton(onClick = { }) {
-
+                    IconButton(onClick = { playerViewModel.toggleShuffle() }) {
+                        Icon(
+                            imageVector = Icons.Filled.Shuffle,
+                            contentDescription = "Shuffle",
+                            tint = if (playerViewModel.isShuffleMode) Color(0xFF8F12FF) else Color.White,
+                            modifier = Modifier.size(25.dp)
+                        )
                     }
 
                     Row(
@@ -246,9 +251,7 @@ fun PlayerScreen(
                         horizontalArrangement = Arrangement.spacedBy(32.dp)
                     ) {
                         IconButton(onClick = {
-                            if (MusicService.isPlaylistMode) {
-                                playerViewModel.playPrevious()
-                            }
+                            if (MusicService.isPlaylistMode) playerViewModel.playPrevious()
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.SkipPrevious,
@@ -271,15 +274,13 @@ fun PlayerScreen(
                             Icon(
                                 imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                                 contentDescription = "Play/Pause",
-                                tint = Color.Red,
+                                tint = Color(0xFF8F12FF),
                                 modifier = Modifier.size(30.dp)
                             )
                         }
 
                         IconButton(onClick = {
-                            if (MusicService.isPlaylistMode) {
-                                playerViewModel.playNext()
-                            }
+                            if (MusicService.isPlaylistMode) playerViewModel.playNext()
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.SkipNext,
@@ -290,12 +291,12 @@ fun PlayerScreen(
                         }
                     }
 
-                    // 🔹 Botón Loop
+                    // 🔹 Botón Loop a la derecha
                     IconButton(onClick = { playerViewModel.toggleLooping() }) {
                         Icon(
                             imageVector = Icons.Filled.Repeat,
                             contentDescription = "Repetir",
-                            tint = if (playerViewModel.isLooping) Color.Red else Color.White,
+                            tint = if (playerViewModel.isLooping) Color(0xFF8F12FF) else Color.White,
                             modifier = Modifier.size(25.dp)
                         )
                     }

@@ -36,6 +36,9 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     var isLooping by mutableStateOf(MusicService.isLoopingEnabled)
         private set
 
+    var isShuffleMode by mutableStateOf(MusicService.isShuffleMode)
+        private set
+
     private val prefs = application.getSharedPreferences("MyPrefs", Application.MODE_PRIVATE)
     private val songId = prefs.getInt("songID", -1)
     private val userId = prefs.getInt("userID", -1)
@@ -104,9 +107,20 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     fun playSong() {
         val mp: MediaPlayer = MusicService.mediaPlayer ?: MediaPlayer().also { MusicService.mediaPlayer = it }
 
-        val s = if (MusicService.isPlaylistMode) {
-            MusicService.playlist.getOrNull(MusicService.currentIndex) ?: return
-        } else song ?: return
+        if (MusicService.isPlaylistMode) {
+            if (MusicService.isShuffleMode) {
+                // 🔹 Crear shufflePlaylist solo si está vacía
+                if (MusicService.shufflePlaylist.isEmpty() && MusicService.playlist.isNotEmpty()) {
+                    MusicService.shufflePlaylist = MusicService.playlist.shuffled()
+                    MusicService.currentIndex = 0
+                }
+                song = MusicService.shufflePlaylist.getOrNull(MusicService.currentIndex)
+            } else {
+                song = MusicService.playlist.getOrNull(MusicService.currentIndex)
+            }
+        }
+
+        val s = song ?: return
 
         try {
             MusicService.isPrepared = false
@@ -188,6 +202,11 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
         MusicService.isLoopingEnabled = !MusicService.isLoopingEnabled
         MusicService.mediaPlayer?.isLooping = MusicService.isLoopingEnabled
         isLooping = MusicService.isLoopingEnabled
+    }
+
+    fun toggleShuffle() {
+        isShuffleMode = !isShuffleMode
+        MusicService.isShuffleMode = isShuffleMode
     }
 
     fun playNext() {

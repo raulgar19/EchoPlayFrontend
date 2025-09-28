@@ -43,9 +43,11 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
         ) {
             val gradient = Brush.linearGradient(
                 colorStops = arrayOf(
-                    0.0f to Color.Red,
-                    0.3f to Color.Red,
-                    1.0f to Color.Black
+                    0.0f to Color(0xFF1595FF), // Azul claro
+                    0.25f to Color(0xFF4442FF), // Azul intenso
+                    0.5f to Color(0xFF8F12FF),  // Violeta brillante
+                    0.75f to Color(0xFF611FFE), // Violeta oscuro
+                    1.0f to Color(0xFF000519)   // Azul casi negro
                 ),
                 start = Offset(0f, 0f),
                 end = Offset(maxWidth.value, maxHeight.value)
@@ -57,7 +59,7 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
                     .background(gradient),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = Color.White)
+                CircularProgressIndicator(color = Color(0xFF8F12FF))
             }
         }
     } else {
@@ -74,7 +76,7 @@ private fun HomeContent(navController: NavController, homeViewModel: HomeViewMod
 
     Scaffold(
         bottomBar = {
-            NavigationBar(containerColor = Color(0xFF121212)) {
+            NavigationBar(containerColor = Color(0xFF000519)) { // fondo acorde al gradiente
                 items.forEachIndexed { index, item ->
                     NavigationBarItem(
                         selected = selectedItem == index,
@@ -82,8 +84,8 @@ private fun HomeContent(navController: NavController, homeViewModel: HomeViewMod
                         label = { Text(item) },
                         icon = { Icon(icons[index], contentDescription = item) },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color.Red,
-                            selectedTextColor = Color.Red,
+                            selectedIconColor = Color(0xFF8F12FF),   // violeta brillante
+                            selectedTextColor = Color(0xFF8F12FF),
                             unselectedIconColor = Color.White,
                             unselectedTextColor = Color.White,
                             indicatorColor = Color.Transparent
@@ -96,9 +98,11 @@ private fun HomeContent(navController: NavController, homeViewModel: HomeViewMod
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val gradient = Brush.linearGradient(
                 colorStops = arrayOf(
-                    0.0f to Color.Red,
-                    0.3f to Color.Red,
-                    1.0f to Color.Black
+                    0.0f to Color(0xFF1595FF), // Azul claro
+                    0.25f to Color(0xFF4442FF), // Azul intenso
+                    0.5f to Color(0xFF8F12FF),  // Violeta brillante
+                    0.75f to Color(0xFF611FFE), // Violeta oscuro
+                    1.0f to Color(0xFF000519)   // Azul casi negro
                 ),
                 start = Offset(0f, 0f),
                 end = Offset(maxWidth.value, maxHeight.value)
@@ -214,7 +218,7 @@ fun MisListasContent(
         Button(
             onClick = { showDialog = true },
             shape = CircleShape,
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8F12FF)),
             modifier = Modifier
                 .align(Alignment.End)
                 .size(60.dp)
