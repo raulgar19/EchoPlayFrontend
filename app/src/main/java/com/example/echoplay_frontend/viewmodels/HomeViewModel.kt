@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import com.example.echoplay_frontend.data.models.CreatePlaylistRequest
+import com.example.echoplay_frontend.data.models.SongToAdd
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -28,8 +29,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     var isLoading by mutableStateOf(true)
         private set
 
+    var selectedTab by mutableStateOf(0)
+        private set
+
     init {
         loadData()
+    }
+
+    fun updateSelectedTab(index: Int) {
+        selectedTab = index
     }
 
     private fun loadData() {
@@ -78,6 +86,38 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     name = newPlaylist.name,
                     userId = newPlaylist.userId
                 )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun addSongToPlaylist(songId: Int, playlistId: Int) {
+        viewModelScope.launch {
+            try {
+                val response = RetrofitInstance.api.addSongToPlaylist(
+                    playlistId = playlistId,
+                    body = SongToAdd(songId)
+                )
+                if (response.isSuccessful) {
+                    loadData()
+                } else {
+                    println("Error al añadir la canción a la playlist: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun deletePlaylist(id: Int) {
+        viewModelScope.launch {
+            try {
+                val response = RetrofitInstance.api.deletePlaylist(id) // 👈 llamada al backend
+                if (response.isSuccessful) {
+                    // 🔹 refrescamos la lista desde el backend
+                    loadData()
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }

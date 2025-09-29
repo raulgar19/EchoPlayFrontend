@@ -200,7 +200,7 @@ fun PlayerScreen(
                         onClick = { showPlaylistDialog = true }
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.PlaylistAdd,
+                            imageVector = Icons.Filled.LibraryAdd,
                             contentDescription = "Añadir a lista",
                             tint = Color.White,
                             modifier = Modifier.size(28.dp)

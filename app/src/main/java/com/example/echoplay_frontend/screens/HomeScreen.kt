@@ -11,7 +11,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.LibraryAdd
+import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -70,9 +72,9 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "UnusedBoxWithConstraintsScope")
 @Composable
 private fun HomeContent(navController: NavController, homeViewModel: HomeViewModel) {
-    var selectedItem by remember { mutableStateOf(0) }
+    val selectedItem = homeViewModel.selectedTab
     val items = listOf("Mis listas", "Buscar")
-    val icons = listOf(Icons.Default.List, Icons.Default.Search)
+    val icons = listOf(Icons.Filled.LibraryMusic, Icons.Default.Search)
 
     Scaffold(
         bottomBar = {
@@ -80,7 +82,7 @@ private fun HomeContent(navController: NavController, homeViewModel: HomeViewMod
                 items.forEachIndexed { index, item ->
                     NavigationBarItem(
                         selected = selectedItem == index,
-                        onClick = { selectedItem = index },
+                        onClick = { homeViewModel.updateSelectedTab(index) },
                         label = { Text(item) },
                         icon = { Icon(icons[index], contentDescription = item) },
                         colors = NavigationBarItemDefaults.colors(
@@ -152,6 +154,10 @@ fun MisListasContent(
     var showDialog by remember { mutableStateOf(false) }
     var newListName by remember { mutableStateOf("") }
 
+    // 🔹 Control de diálogo de eliminación
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var playlistToDelete by remember { mutableStateOf<Int?>(null) }
+
     val context = LocalContext.current
 
     Column(
@@ -164,7 +170,7 @@ fun MisListasContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.8f), // lista más pequeña
+                    .fillMaxHeight(0.8f),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -178,36 +184,47 @@ fun MisListasContent(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.8f), // lista más pequeña
+                    .fillMaxHeight(0.8f),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(homeViewModel.playlists) { playlist ->
-                    Button(
-                        onClick = {
-                            val prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-                            prefs.edit()
-                                .putInt("playlistID", playlist.id)
-                                .putString("playlistName", playlist.name)
-                                .apply()
-                            navController.navigate("playlist")
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF121212)),
-                        contentPadding = PaddingValues(0.dp),
-                        shape = RoundedCornerShape(8.dp),
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(60.dp)
+                            .background(Color(0xFF121212), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Row(
+                        // 🔹 Navegar a la playlist
+                        Text(
+                            playlist.name,
+                            color = Color.White,
+                            fontSize = 16.sp,
                             modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .weight(1f)
+                                .clickable {
+                                    val prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+                                    prefs.edit()
+                                        .putInt("playlistID", playlist.id)
+                                        .putString("playlistName", playlist.name)
+                                        .apply()
+                                    navController.navigate("playlist")
+                                }
+                        )
+
+                        // 🔹 Botón de eliminar
+                        IconButton(
+                            onClick = {
+                                playlistToDelete = playlist.id
+                                showDeleteDialog = true
+                            }
                         ) {
-                            Text(
-                                playlist.name,
-                                color = Color.White,
-                                fontSize = 16.sp
+                            Icon(
+                                imageVector = Icons.Filled.Delete,
+                                contentDescription = "Eliminar playlist",
+                                tint = Color.Red
                             )
                         }
                     }
@@ -227,6 +244,7 @@ fun MisListasContent(
         }
     }
 
+    // 🔹 Diálogo para añadir playlist
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
@@ -272,6 +290,39 @@ fun MisListasContent(
             textContentColor = Color.White
         )
     }
+
+    // 🔹 Diálogo de confirmación para eliminar playlist
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        playlistToDelete?.let { id ->
+                            homeViewModel.deletePlaylist(id)
+                        }
+                        showDeleteDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                    Text("Eliminar", color = Color.White)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showDeleteDialog = false },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
+                ) {
+                    Text("Cancelar")
+                }
+            },
+            title = { Text("Eliminar playlist") },
+            text = { Text("¿Estás seguro de que deseas eliminar esta playlist?") },
+            containerColor = Color(0xFF1E1E1E),
+            titleContentColor = Color.White,
+            textContentColor = Color.White
+        )
+    }
 }
 
 @Composable
@@ -292,6 +343,10 @@ fun SearchContent(
 
     val context = LocalContext.current
 
+    // 🔹 Estado para el diálogo
+    var showPlaylistDialog by remember { mutableStateOf(false) }
+    var songToAdd by remember { mutableStateOf<Int?>(null) }
+
     Column(modifier = modifier.fillMaxSize()) {
         TextField(
             value = homeViewModel.searchQuery,
@@ -307,7 +362,7 @@ fun SearchContent(
 
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxHeight(0.98f) // lista más pequeña
+            modifier = Modifier.fillMaxHeight(0.98f)
         ) {
             items(filteredSongsList) { song ->
                 Row(
@@ -315,38 +370,97 @@ fun SearchContent(
                         .fillMaxWidth()
                         .height(60.dp)
                         .background(Color(0xFF121212), RoundedCornerShape(8.dp))
-                        .padding(8.dp)
-                        .clickable {
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f).clickable {
                             val prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
                             prefs.edit().putInt("songID", song.id).apply()
                             MusicService.isPlaylistMode = false
                             navController.navigate("player")
-                        },
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    AsyncImage(
-                        model = song.cover,
-                        contentDescription = "Cover",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(50.dp)
-                            .background(Color.Gray, RoundedCornerShape(4.dp))
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = song.name,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.fillMaxWidth()
+                        }
+                    ) {
+                        AsyncImage(
+                            model = song.cover,
+                            contentDescription = "Cover",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(50.dp)
+                                .background(Color.Gray, RoundedCornerShape(4.dp))
                         )
-                        Text(song.artist, color = Color.LightGray, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = song.name,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Text(song.artist, color = Color.LightGray, fontSize = 14.sp)
+                        }
+                    }
+
+                    // 🔹 Botón añadir a playlist
+                    IconButton(onClick = {
+                        songToAdd = song.id
+                        showPlaylistDialog = true
+                    }) {
+                        Icon(
+                            imageVector = Icons.Filled.LibraryAdd,
+                            contentDescription = "Añadir a playlist",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
                 }
             }
         }
+    }
+
+    // 🔹 Diálogo de selección de playlist
+    if (showPlaylistDialog) {
+        AlertDialog(
+            onDismissRequest = { showPlaylistDialog = false },
+            containerColor = Color(0xFF121212),
+            titleContentColor = Color.White,
+            textContentColor = Color.White,
+            shape = RoundedCornerShape(16.dp),
+            title = { Text("Selecciona una Playlist", fontSize = 20.sp, fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    homeViewModel.playlists.forEach { playlist ->
+                        TextButton(
+                            onClick = {
+                                songToAdd?.let { id ->
+                                    // 👇 Necesitas un método en el ViewModel
+                                    homeViewModel.addSongToPlaylist(id, playlist.id)
+                                }
+                                showPlaylistDialog = false
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .background(Color(0xFF1F1F1F), RoundedCornerShape(8.dp))
+                        ) {
+                            Text(playlist.name, color = Color.White, fontSize = 16.sp)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { showPlaylistDialog = false },
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF8F12FF))
+                ) {
+                    Text("Cancelar", fontSize = 16.sp)
+                }
+            }
+        )
     }
 }

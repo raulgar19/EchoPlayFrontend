@@ -49,4 +49,7 @@ interface ApiService {
 
     @GET("app/version")
     fun getLatestVersion(): Call<VersionResponse>
+
+    @DELETE("playlists/{id}")
+    suspend fun deletePlaylist(@Path("id") id: Int): Response<Unit>
 }

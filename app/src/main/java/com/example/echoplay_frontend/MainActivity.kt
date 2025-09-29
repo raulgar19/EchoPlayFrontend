@@ -7,11 +7,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.core.content.FileProvider
@@ -131,6 +134,7 @@ class MainActivity : ComponentActivity() {
         manager.enqueue(request)
 
         val onComplete = object : BroadcastReceiver() {
+            @RequiresApi(Build.VERSION_CODES.O)
             @SuppressLint("UnspecifiedRegisterReceiverFlag")
             override fun onReceive(ctxt: Context?, intent: Intent?) {
                 val file = File(
@@ -143,21 +147,37 @@ class MainActivity : ComponentActivity() {
                     file
                 )
 
-                val installIntent = Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(uri, "application/vnd.android.package-archive")
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                startActivity(installIntent)
+                try {
+                    // ✅ Verificar permiso antes de instalar
+                    if (packageManager.canRequestPackageInstalls()) {
+                        val installIntent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(uri, "application/vnd.android.package-archive")
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        startActivity(installIntent)
 
-                val deleted = file.delete()
-                updateResult = if (deleted) {
-                    "La actualización se instaló correctamente."
-                } else {
-                    "La actualización se instaló, pero no se pudo borrar el archivo."
+                        val deleted = file.delete()
+                        updateResult = if (deleted) {
+                            "La actualización se instaló correctamente."
+                        } else {
+                            "La actualización se instaló correctamente, pero no se pudo borrar el archivo."
+                        }
+                    } else {
+                        // Redirigir al usuario a ajustes
+                        val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                            data = Uri.parse("package:$packageName")
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        startActivity(intent)
+                        updateResult = "Debes habilitar 'Permitir desde esta fuente' para instalar actualizaciones."
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    updateResult = "Error al instalar la actualización: ${e.message}"
+                } finally {
+                    unregisterReceiver(this)
                 }
-
-                unregisterReceiver(this)
             }
         }
 
