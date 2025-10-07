@@ -3,6 +3,12 @@ package com.example.echoplay_frontend.screens
 import HomeViewModel
 import android.annotation.SuppressLint
 import android.content.Context
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -14,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -154,7 +161,6 @@ fun MisListasContent(
     var showDialog by remember { mutableStateOf(false) }
     var newListName by remember { mutableStateOf("") }
 
-    // 🔹 Control de diálogo de eliminación
     var showDeleteDialog by remember { mutableStateOf(false) }
     var playlistToDelete by remember { mutableStateOf<Int?>(null) }
 
@@ -166,7 +172,6 @@ fun MisListasContent(
             .padding(horizontal = 16.dp)
     ) {
         if (homeViewModel.playlists.isEmpty()) {
-            // Mensaje cuando no hay playlists
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -197,7 +202,6 @@ fun MisListasContent(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        // 🔹 Navegar a la playlist
                         Text(
                             playlist.name,
                             color = Color.White,
@@ -214,7 +218,6 @@ fun MisListasContent(
                                 }
                         )
 
-                        // 🔹 Botón de eliminar
                         IconButton(
                             onClick = {
                                 playlistToDelete = playlist.id
@@ -232,19 +235,65 @@ fun MisListasContent(
             }
         }
 
-        Button(
-            onClick = { showDialog = true },
-            shape = CircleShape,
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8F12FF)),
+        // 🔹 Parte inferior: Botón + indicador si hay música
+        Row(
             modifier = Modifier
-                .align(Alignment.End)
-                .size(60.dp)
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("+", color = Color.White, fontSize = 24.sp)
+            if (MusicService.isPlaying) {
+                Card(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(60.dp)
+                        .clickable { navController.navigate("player") },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)),
+                    elevation = CardDefaults.cardElevation(6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = "Ir al reproductor",
+                            tint = Color(0xFF8F12FF),
+                            modifier = Modifier.size(26.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Volver al reproductor",
+                            color = Color.White,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 15.sp
+                        )
+                    }
+                }
+            } else {
+                Spacer(modifier = Modifier.weight(1f))
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Botón para añadir playlist
+            Button(
+                onClick = { showDialog = true },
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8F12FF)),
+                modifier = Modifier.size(60.dp)
+            ) {
+                Text("+", color = Color.White, fontSize = 24.sp)
+            }
         }
     }
 
-    // 🔹 Diálogo para añadir playlist
+    // 🔹 Diálogo para añadir playlist (sin cambios)
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
@@ -291,7 +340,7 @@ fun MisListasContent(
         )
     }
 
-    // 🔹 Diálogo de confirmación para eliminar playlist
+    // 🔹 Diálogo eliminar playlist (sin cambios)
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
@@ -342,8 +391,6 @@ fun SearchContent(
     }
 
     val context = LocalContext.current
-
-    // 🔹 Estado para el diálogo
     var showPlaylistDialog by remember { mutableStateOf(false) }
     var songToAdd by remember { mutableStateOf<Int?>(null) }
 
@@ -362,7 +409,9 @@ fun SearchContent(
 
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxHeight(0.98f)
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f, fill = true)
         ) {
             items(filteredSongsList) { song ->
                 Row(
@@ -376,12 +425,14 @@ fun SearchContent(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f).clickable {
-                            val prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-                            prefs.edit().putInt("songID", song.id).apply()
-                            MusicService.isPlaylistMode = false
-                            navController.navigate("player")
-                        }
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable {
+                                val prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+                                prefs.edit().putInt("songID", song.id).apply()
+                                MusicService.isPlaylistMode = false
+                                navController.navigate("player")
+                            }
                     ) {
                         AsyncImage(
                             model = song.cover,
@@ -406,7 +457,6 @@ fun SearchContent(
                         }
                     }
 
-                    // 🔹 Botón añadir a playlist
                     IconButton(onClick = {
                         songToAdd = song.id
                         showPlaylistDialog = true
@@ -421,9 +471,44 @@ fun SearchContent(
                 }
             }
         }
+
+        // 🔹 Indicador debajo de la lista si hay música reproduciéndose
+        if (MusicService.isPlaying) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp)
+                    .clickable { navController.navigate("player") },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)),
+                elevation = CardDefaults.cardElevation(6.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 14.dp, horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = "Ir al reproductor",
+                        tint = Color(0xFF8F12FF),
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Volver al reproductor",
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 16.sp
+                    )
+                }
+            }
+        }
     }
 
-    // 🔹 Diálogo de selección de playlist
+    // 🔹 Diálogo para añadir canción a playlist (sin cambios)
     if (showPlaylistDialog) {
         AlertDialog(
             onDismissRequest = { showPlaylistDialog = false },
@@ -438,7 +523,6 @@ fun SearchContent(
                         TextButton(
                             onClick = {
                                 songToAdd?.let { id ->
-                                    // 👇 Necesitas un método en el ViewModel
                                     homeViewModel.addSongToPlaylist(id, playlist.id)
                                 }
                                 showPlaylistDialog = false

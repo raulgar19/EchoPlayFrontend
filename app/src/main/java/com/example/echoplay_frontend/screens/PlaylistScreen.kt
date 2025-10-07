@@ -128,55 +128,92 @@ fun PlaylistScreen(navController: NavController, playlistViewModel: PlaylistView
                             )
                         }
                     } else {
-                        LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            items(songs) { song ->
-                                Row(
+                        Column {
+                            LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                modifier = Modifier.fillMaxHeight(0.80f)
+                            ) {
+                                items(songs) { song ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(60.dp)
+                                            .background(Color(0xFF121212), RoundedCornerShape(8.dp))
+                                            .clickable {
+                                                val prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+                                                prefs.edit().putInt("songID", song.id).apply()
+                                                MusicService.isPlaylistMode = false
+                                                navController.navigate("player")
+                                            }
+                                            .padding(horizontal = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        AsyncImage(
+                                            model = song.cover,
+                                            contentDescription = "Carátula",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier
+                                                .size(50.dp)
+                                                .background(Color.Gray, RoundedCornerShape(4.dp))
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = song.name,
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 16.sp,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                            Text(song.artist, color = Color.LightGray, fontSize = 14.sp)
+                                        }
+                                        IconButton(
+                                            onClick = {
+                                                playlistViewModel.removeSongFromPlaylist(song.id)
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.Delete,
+                                                contentDescription = "Eliminar canción",
+                                                tint = Color.Red
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // 🔹 Indicador debajo de la lista si hay música reproduciéndose
+                            if (MusicService.isPlaying) {
+                                Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(60.dp)
-                                        .background(Color(0xFF121212), RoundedCornerShape(8.dp))
-                                        .clickable {
-                                            val prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-                                            prefs.edit().putInt("songID", song.id).apply()
-                                            MusicService.isPlaylistMode = false
-                                            navController.navigate("player")
-                                        }
-                                        .padding(horizontal = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                        .padding(top = 10.dp)
+                                        .clickable { navController.navigate("player") },
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)),
+                                    elevation = CardDefaults.cardElevation(6.dp)
                                 ) {
-                                    AsyncImage(
-                                        model = song.cover,
-                                        contentDescription = "Carátula",
-                                        contentScale = ContentScale.Crop,
+                                    Row(
                                         modifier = Modifier
-                                            .size(50.dp)
-                                            .background(Color.Gray, RoundedCornerShape(4.dp))
-                                    )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = song.name,
-                                            color = Color.White,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 16.sp,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
-                                        Text(song.artist, color = Color.LightGray, fontSize = 14.sp)
-                                    }
-                                    IconButton(
-                                        onClick = {
-                                            playlistViewModel.removeSongFromPlaylist(song.id)
-                                        }
+                                            .fillMaxWidth()
+                                            .padding(vertical = 14.dp, horizontal = 20.dp),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Filled.Delete,
-                                            contentDescription = "Eliminar canción",
-                                            tint = Color.Red
+                                            imageVector = Icons.Default.PlayArrow,
+                                            contentDescription = "Ir al reproductor",
+                                            tint = Color(0xFF8F12FF),
+                                            modifier = Modifier.size(28.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Text(
+                                            text = "Volver al reproductor",
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = 16.sp
                                         )
                                     }
                                 }
