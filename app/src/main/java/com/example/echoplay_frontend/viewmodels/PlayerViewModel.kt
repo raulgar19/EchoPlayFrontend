@@ -107,6 +107,11 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     fun playSong() {
         val mp: MediaPlayer = MusicService.mediaPlayer ?: MediaPlayer().also { MusicService.mediaPlayer = it }
 
+        if (MusicService.isReturningFromPlayerButton && MusicService.isPlaying && MusicService.currentFile == song?.file) {
+            MusicService.isReturningFromPlayerButton = false
+            return
+        }
+
         if (MusicService.isPlaylistMode) {
             if (MusicService.isShuffleMode) {
                 // 🔹 Crear shufflePlaylist solo si está vacía
@@ -164,6 +169,37 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
             }
         } else {
             MusicService.isPlaylistMode = false
+        }
+    }
+
+    fun togglePlayPause() {
+        val mp = MusicService.mediaPlayer ?: return
+        val currentFile = MusicService.currentFile
+        val songFile = song?.file
+
+        if (MusicService.isPlaying) {
+            // Si está sonando, pausamos
+            try {
+                mp.pause()
+                MusicService.isPlaying = false
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        } else {
+            // Si está pausado y es la misma canción ya cargada, reanudamos desde la posición actual
+            if (currentFile != null && songFile != null && currentFile == songFile && MusicService.isPrepared) {
+                try {
+                    mp.start()
+                    MusicService.isPlaying = true
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    // fallback: recargar la canción si hay un problema
+                    playSong()
+                }
+            } else {
+                // Si no hay canción cargada o es distinta, arrancamos la reproducción normal
+                playSong()
+            }
         }
     }
 

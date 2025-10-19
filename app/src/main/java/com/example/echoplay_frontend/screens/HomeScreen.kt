@@ -248,7 +248,10 @@ fun MisListasContent(
                     modifier = Modifier
                         .weight(1f)
                         .height(60.dp)
-                        .clickable { navController.navigate("player") },
+                        .clickable {
+                            MusicService.isReturningFromPlayerButton = true
+                            navController.navigate("player")
+                        },
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)),
                     elevation = CardDefaults.cardElevation(6.dp)
@@ -478,7 +481,10 @@ fun SearchContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 10.dp)
-                    .clickable { navController.navigate("player") },
+                    .clickable {
+                        MusicService.isReturningFromPlayerButton = true
+                        navController.navigate("player")
+                    },
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)),
                 elevation = CardDefaults.cardElevation(6.dp)

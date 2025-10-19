@@ -1,5 +1,5 @@
 package com.example.echoplay_frontend.data.models
 
 object Version {
-    const val CURRENT = "1.2.1"
+    const val CURRENT = "1.3.0"
 }

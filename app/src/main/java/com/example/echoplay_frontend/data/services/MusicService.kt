@@ -24,6 +24,7 @@ class MusicService : Service() {
         var isPlaylistMode: Boolean = false
         var isPrepared: Boolean = false
         var isShuffleMode: Boolean = false
+        var isReturningFromPlayerButton: Boolean = false
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

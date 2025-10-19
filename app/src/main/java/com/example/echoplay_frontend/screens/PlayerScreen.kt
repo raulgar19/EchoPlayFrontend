@@ -263,8 +263,7 @@ fun PlayerScreen(
 
                         IconButton(
                             onClick = {
-                                if (MusicService.isPlaying) playerViewModel.pauseSong()
-                                else playerViewModel.playSong()
+                                playerViewModel.togglePlayPause()
                                 isPlaying = MusicService.isPlaying
                             },
                             modifier = Modifier

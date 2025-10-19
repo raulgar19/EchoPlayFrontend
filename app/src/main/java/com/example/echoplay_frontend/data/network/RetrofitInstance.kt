@@ -4,8 +4,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitInstance {
-    //https://downloaded-warranty-skill-common.trycloudflare.com/ http://192.168.1.39:3000/   parcela http://192.168.68.114:3000/
-    private const val BASE_URL = "http://192.168.1.39:3000/"
+    //https://restaurant-specialties-finished-voting.trycloudflare.com/ http://192.168.1.39:3000/   parcela http://192.168.68.114:3000/
+    private const val BASE_URL = "https://restaurant-specialties-finished-voting.trycloudflare.com/"
 
     val api: ApiService by lazy {
         Retrofit.Builder()
