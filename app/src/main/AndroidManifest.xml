@@ -4,6 +4,8 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application
@@ -37,6 +39,22 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <service
+            android:name=".data.services.MusicService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <receiver
+            android:name=".data.services.MusicNotificationReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.example.echoplay_frontend.PLAY_PAUSE" />
+                <action android:name="com.example.echoplay_frontend.NEXT" />
+                <action android:name="com.example.echoplay_frontend.PREVIOUS" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

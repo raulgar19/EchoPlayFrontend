@@ -39,8 +39,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val intent = Intent(this, MusicService::class.java)
-        startService(intent)
+        // ✅ Ya NO iniciamos el servicio aquí - se iniciará cuando el usuario presione Play
         checkForUpdate()
 
         setContent {
@@ -182,5 +181,12 @@ class MainActivity : ComponentActivity() {
         }
 
         registerReceiver(onComplete, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Detener el servicio siempre al cerrar la app
+        val intent = Intent(this, MusicService::class.java)
+        stopService(intent)
     }
 }

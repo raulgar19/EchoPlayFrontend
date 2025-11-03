@@ -49,7 +49,7 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
         // Loader con fondo degradado original
         BoxWithConstraints(
             modifier = Modifier.fillMaxSize()
-        ) {
+        ) { 
             val gradient = Brush.linearGradient(
                 colorStops = arrayOf(
                     0.0f to Color(0xFF1595FF), // Azul claro

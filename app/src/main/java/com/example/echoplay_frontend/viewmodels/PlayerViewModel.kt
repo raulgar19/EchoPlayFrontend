@@ -2,6 +2,7 @@ package com.example.echoplay_frontend.viewmodels
 
 import android.annotation.SuppressLint
 import android.app.Application
+import android.content.Intent
 import android.media.MediaPlayer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -42,6 +43,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     private val prefs = application.getSharedPreferences("MyPrefs", Application.MODE_PRIVATE)
     private val songId = prefs.getInt("songID", -1)
     private val userId = prefs.getInt("userID", -1)
+    private val context = application.applicationContext
 
     init {
         isLoading = true
@@ -129,23 +131,31 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
         try {
             MusicService.isPrepared = false
+            MusicService.currentSong = s // ✅ Actualizar canción ANTES de preparar
             if (mp.isPlaying) mp.stop()
             mp.reset()
 
             mp.setDataSource(s.file)
             mp.isLooping = MusicService.isLoopingEnabled
 
-            mp.setOnPreparedListener {
+            mp.setOnPreparedListener { preparedMp ->
                 MusicService.isPrepared = true
                 MusicService.currentFile = s.file
-                it.start()
-                MusicService.isPlaying = true
+                try {
+                    preparedMp.start()
+                    MusicService.isPlaying = true
+                    updateServiceNotification() // ✅ Actualizar notificación cuando empieza a reproducir
+                } catch (ex: Exception) {
+                    ex.printStackTrace()
+                    MusicService.isPlaying = false
+                }
             }
 
-            mp.setOnCompletionListener {
+            mp.setOnCompletionListener { _ ->
                 if (!MusicService.isPrepared) return@setOnCompletionListener
                 MusicService.isPlaying = false
                 MusicService.currentFile = null
+                updateServiceNotification() // ✅ Actualizar notificación cuando termina
 
                 if (MusicService.isPlaylistMode) {
                     playNextInPlaylist()
@@ -153,6 +163,15 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
             }
 
             mp.prepareAsync()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun updateServiceNotification() {
+        try {
+            val intent = Intent(context, MusicService::class.java)
+            context.startService(intent)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -182,6 +201,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
             try {
                 mp.pause()
                 MusicService.isPlaying = false
+                updateServiceNotification()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -191,6 +211,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                 try {
                     mp.start()
                     MusicService.isPlaying = true
+                    updateServiceNotification()
                 } catch (e: Exception) {
                     e.printStackTrace()
                     // fallback: recargar la canción si hay un problema
@@ -208,6 +229,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
         if (mp.isPlaying) {
             mp.pause()
             MusicService.isPlaying = false
+            updateServiceNotification() // ✅ Actualizar notificación al pausar
         }
     }
 
@@ -216,19 +238,28 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
         if (mp.isPlaying) mp.stop()
         MusicService.isPlaying = false
         MusicService.currentFile = null
+        updateServiceNotification() // ✅ Actualizar notificación al detener
     }
 
     fun seekTo(percent: Float) {
         val mp = MusicService.mediaPlayer ?: return
-        if (mp.duration > 0) {
-            val pos = (percent / 100f * mp.duration).toInt()
+        try {
+            val duration = mp.duration.coerceAtLeast(1)
+            val pos = (percent / 100f * duration).toInt().coerceIn(0, duration)
             mp.seekTo(pos)
+        } catch (e: IllegalStateException) {
+            e.printStackTrace()
         }
     }
 
     fun updateSlider() {
         MusicService.mediaPlayer?.let {
-            sliderPosition = (it.currentPosition.toFloat() / it.duration.coerceAtLeast(1)) * 100f
+            try {
+                val dur = it.duration.coerceAtLeast(1)
+                sliderPosition = (it.currentPosition.toFloat() / dur) * 100f
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
