@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/splash_gradient"
+    android:gravity="center">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_centerInParent="true">
+
+        <!-- Ícono/Logo de la app -->
+        <ImageView
+            android:id="@+id/app_icon"
+            android:layout_width="160dp"
+            android:layout_height="160dp"
+            android:src="@drawable/echoplay_logo"
+            android:contentDescription="App Logo"
+            android:scaleType="fitCenter" />
+
+        <!-- Nombre de la app -->
+        <TextView
+            android:id="@+id/app_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Echo Play"
+            android:textColor="@android:color/white"
+            android:textSize="42sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginTop="24dp"
+            android:letterSpacing="0.05" />
+
+        <!-- Subtítulo -->
+        <TextView
+            android:id="@+id/app_subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tu música, tu estilo"
+            android:textColor="#E0E0E0"
+            android:textSize="16sp"
+            android:layout_marginTop="8dp"
+            android:alpha="0.9" />
+
+        <!-- Indicador de progreso moderno -->
+        <ProgressBar
+            android:id="@+id/progress_bar"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="200dp"
+            android:layout_height="4dp"
+            android:layout_marginTop="40dp"
+            android:indeterminate="true"
+            android:indeterminateTint="@android:color/white"
+            android:progressTint="@android:color/white" />
+
+    </LinearLayout>
+
+    <!-- Versión en la parte inferior -->
+    <TextView
+        android:id="@+id/version_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="v1.3.0"
+        android:textColor="#CCCCCC"
+        android:textSize="12sp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="32dp" />
+
+</RelativeLayout>
