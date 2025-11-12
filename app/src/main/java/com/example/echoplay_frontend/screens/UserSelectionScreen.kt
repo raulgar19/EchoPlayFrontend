@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.echoplay_frontend.viewmodel.UserSelectionViewModel
+import com.example.echoplay_frontend.utils.convertGoogleDriveUrl
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
@@ -102,7 +103,7 @@ fun UserSelectionScreen(
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     AsyncImage(
-                                        model = user.image,
+                                        model = convertGoogleDriveUrl(user.image),
                                         contentDescription = "Imagen perfil",
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier

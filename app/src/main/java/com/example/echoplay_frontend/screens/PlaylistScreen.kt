@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.echoplay_frontend.utils.convertGoogleDriveUrl
 import com.example.echoplay_frontend.viewmodel.PlaylistViewModel
 import com.example.echoplay_frontend.data.models.Song
 import com.example.echoplay_frontend.R
@@ -149,7 +150,7 @@ fun PlaylistScreen(navController: NavController, playlistViewModel: PlaylistView
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         AsyncImage(
-                                            model = song.cover,
+                                            model = convertGoogleDriveUrl(song.cover),
                                             contentDescription = "Carátula",
                                             contentScale = ContentScale.Crop,
                                             modifier = Modifier
@@ -167,7 +168,14 @@ fun PlaylistScreen(navController: NavController, playlistViewModel: PlaylistView
                                                 overflow = TextOverflow.Ellipsis,
                                                 modifier = Modifier.fillMaxWidth()
                                             )
-                                            Text(song.artist, color = Color.LightGray, fontSize = 14.sp)
+                                            Text(
+                                                text = song.artist,
+                                                color = Color.LightGray,
+                                                fontSize = 14.sp,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
                                         }
                                         IconButton(
                                             onClick = {

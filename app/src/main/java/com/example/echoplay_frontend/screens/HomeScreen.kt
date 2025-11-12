@@ -39,6 +39,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.echoplay_frontend.data.services.MusicService
+import com.example.echoplay_frontend.utils.convertGoogleDriveUrl
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "UnusedBoxWithConstraintsScope")
 @Composable
@@ -438,7 +439,7 @@ fun SearchContent(
                             }
                     ) {
                         AsyncImage(
-                            model = song.cover,
+                            model = convertGoogleDriveUrl(song.cover),
                             contentDescription = "Cover",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier

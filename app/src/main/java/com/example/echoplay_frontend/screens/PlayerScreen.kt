@@ -23,6 +23,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.echoplay_frontend.data.services.MusicService
 import com.example.echoplay_frontend.viewmodels.PlayerViewModel
+import com.example.echoplay_frontend.utils.convertGoogleDriveUrl
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -127,7 +128,7 @@ fun PlayerScreen(
 
             // Fondo con la carátula
             AsyncImage(
-                model = s.cover,
+                model = convertGoogleDriveUrl(s.cover),
                 contentDescription = "Background Cover",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
@@ -156,7 +157,7 @@ fun PlayerScreen(
                 Spacer(modifier = Modifier.height(80.dp))
 
                 AsyncImage(
-                    model = s.cover,
+                    model = convertGoogleDriveUrl(s.cover),
                     contentDescription = "Carátula de la canción",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier

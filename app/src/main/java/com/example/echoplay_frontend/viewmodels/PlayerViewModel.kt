@@ -15,6 +15,7 @@ import com.example.echoplay_frontend.data.models.Playlist
 import com.example.echoplay_frontend.data.models.Song
 import com.example.echoplay_frontend.data.models.SongToAdd
 import com.example.echoplay_frontend.data.network.RetrofitInstance
+import com.example.echoplay_frontend.utils.convertGoogleDriveUrl
 import kotlinx.coroutines.launch
 
 class PlayerViewModel(application: Application) : AndroidViewModel(application) {
@@ -135,7 +136,9 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
             if (mp.isPlaying) mp.stop()
             mp.reset()
 
-            mp.setDataSource(s.file)
+            // ✅ Convertir URL de Google Drive si es necesario
+            val audioUrl = convertGoogleDriveUrl(s.file)
+            mp.setDataSource(audioUrl)
             mp.isLooping = MusicService.isLoopingEnabled
 
             mp.setOnPreparedListener { preparedMp ->

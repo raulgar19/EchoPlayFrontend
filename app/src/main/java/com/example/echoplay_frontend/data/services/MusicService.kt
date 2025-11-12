@@ -18,6 +18,7 @@ import androidx.core.app.NotificationCompat
 import com.example.echoplay_frontend.MainActivity
 import com.example.echoplay_frontend.R
 import com.example.echoplay_frontend.data.models.Song
+import com.example.echoplay_frontend.utils.convertGoogleDriveUrl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -220,7 +221,10 @@ class MusicService : Service() {
             
             if (mp.isPlaying) mp.stop()
             mp.reset()
-            mp.setDataSource(nextSong.file)
+            
+            // ✅ Convertir URL de Google Drive si es necesario
+            val audioUrl = convertGoogleDriveUrl(nextSong.file)
+            mp.setDataSource(audioUrl)
             mp.isLooping = isLoopingEnabled
 
             mp.setOnPreparedListener { preparedMp ->
@@ -279,10 +283,12 @@ class MusicService : Service() {
     private fun loadAlbumArt(coverUrl: String) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val url = URL(coverUrl)
+                // Convertir URL de Google Drive si es necesario
+                val directUrl = convertGoogleDriveUrl(coverUrl)
+                val url = URL(directUrl)
                 val bitmap = BitmapFactory.decodeStream(url.openConnection().getInputStream())
                 albumArtBitmap = bitmap
-                lastCoverUrl = coverUrl // ✅ Guardar URL cargada
+                lastCoverUrl = coverUrl // ✅ Guardar URL original cargada
                 
                 // Actualizar notificación en el hilo principal
                 withContext(Dispatchers.Main) {
