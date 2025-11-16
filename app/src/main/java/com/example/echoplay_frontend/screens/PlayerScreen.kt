@@ -68,10 +68,34 @@ fun PlayerScreen(
         return
     }
 
+    // 🔹 Sincronizar la canción mostrada con lo que realmente está sonando (solo en modo playlist)
+    LaunchedEffect(Unit) {
+        while (true) {
+            if (MusicService.isPlaylistMode) {
+                MusicService.currentSong?.let { currentSong ->
+                    if (song?.id != currentSong.id) {
+                        playerViewModel.updateSongFromService(currentSong)
+                    }
+                }
+            }
+            delay(100)
+        }
+    }
+
     song?.let { s ->
 
-        LaunchedEffect(s) {
-            playerViewModel.playSong()
+        LaunchedEffect(s.id) {
+            // Solo reproducir si:
+            // 1. No estamos volviendo al reproductor desde el botón, O
+            // 2. La canción es diferente a la que está sonando
+            if (!MusicService.isReturningFromPlayerButton || MusicService.currentFile != s.file) {
+                if (MusicService.currentFile != s.file || !MusicService.isPrepared) {
+                    playerViewModel.playSong()
+                }
+            } else {
+                // Si volvemos al reproductor, solo resetear la flag
+                MusicService.isReturningFromPlayerButton = false
+            }
         }
 
         // Dialog de playlists

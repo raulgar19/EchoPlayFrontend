@@ -49,13 +49,19 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     init {
         isLoading = true
 
-        if (MusicService.isPlaylistMode) {
-            // 🔹 Cargar playlist desde MusicService
+        // 🔹 Verificar si estamos volviendo al reproductor o reproduciendo una nueva canción
+        if (MusicService.isReturningFromPlayerButton && MusicService.currentSong != null) {
+            // Volviendo al reproductor - mantener la canción actual
+            song = MusicService.currentSong
+            currentPlaylist = MusicService.playlist.takeIf { it.isNotEmpty() }
+            isLoading = false
+        } else if (MusicService.isPlaylistMode) {
+            // Modo playlist - cargar desde MusicService
             currentPlaylist = MusicService.playlist
 
-            // 🔹 Asignar la primera canción si currentIndex es válido
+            // Asignar la canción si currentIndex es válido
             if (currentPlaylist != null && currentPlaylist!!.isNotEmpty()) {
-                // Asegurarse de que currentIndex esté en 0
+                // Asegurarse de que currentIndex esté en rango
                 if (MusicService.currentIndex >= currentPlaylist!!.size) {
                     MusicService.currentIndex = 0
                 }
@@ -64,11 +70,25 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
             isLoading = false
         } else {
-            if (songId != -1) loadSong()
-            else isLoading = false
+            // Reproducir canción individual - cargar desde songID
+            if (songId != -1) {
+                loadSong()
+            } else if (MusicService.currentSong != null) {
+                // Fallback: si no hay songID pero hay una canción en el servicio
+                song = MusicService.currentSong
+                isLoading = false
+            } else {
+                isLoading = false
+            }
         }
 
         loadPlaylists()
+    }
+
+    // 🔹 Función para actualizar la canción desde MusicService
+    fun updateSongFromService(currentSong: Song) {
+        song = currentSong
+        currentPlaylist = MusicService.playlist.takeIf { it.isNotEmpty() }
     }
 
     private fun loadSong() {
@@ -122,9 +142,15 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                     MusicService.shufflePlaylist = MusicService.playlist.shuffled()
                     MusicService.currentIndex = 0
                 }
-                song = MusicService.shufflePlaylist.getOrNull(MusicService.currentIndex)
+                // 🔹 Solo actualizar la canción si no tenemos una ya asignada
+                if (song == null) {
+                    song = MusicService.shufflePlaylist.getOrNull(MusicService.currentIndex)
+                }
             } else {
-                song = MusicService.playlist.getOrNull(MusicService.currentIndex)
+                // 🔹 Solo actualizar la canción si no tenemos una ya asignada
+                if (song == null) {
+                    song = MusicService.playlist.getOrNull(MusicService.currentIndex)
+                }
             }
         }
 
@@ -280,24 +306,32 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun playNext() {
-        if (MusicService.isPlaylistMode && currentPlaylist != null && currentPlaylist!!.isNotEmpty()) {
-            // 🔹 Avanzar al siguiente índice circular
-            MusicService.currentIndex = (MusicService.currentIndex + 1) % currentPlaylist!!.size
-            song = currentPlaylist!![MusicService.currentIndex]
-            playSong()
+        if (MusicService.isPlaylistMode) {
+            val targetPlaylist = if (MusicService.isShuffleMode) MusicService.shufflePlaylist else MusicService.playlist
+            
+            if (targetPlaylist.isNotEmpty()) {
+                // 🔹 Avanzar al siguiente índice circular
+                MusicService.currentIndex = (MusicService.currentIndex + 1) % targetPlaylist.size
+                song = targetPlaylist[MusicService.currentIndex]
+                playSong()
+            }
         } else {
             stopSong()
         }
     }
 
     fun playPrevious() {
-        if (MusicService.isPlaylistMode && currentPlaylist != null && currentPlaylist!!.isNotEmpty()) {
-            // 🔹 Retroceder al índice anterior circular
-            MusicService.currentIndex =
-                if (MusicService.currentIndex - 1 < 0) currentPlaylist!!.size - 1
-                else MusicService.currentIndex - 1
-            song = currentPlaylist!![MusicService.currentIndex]
-            playSong()
+        if (MusicService.isPlaylistMode) {
+            val targetPlaylist = if (MusicService.isShuffleMode) MusicService.shufflePlaylist else MusicService.playlist
+            
+            if (targetPlaylist.isNotEmpty()) {
+                // 🔹 Retroceder al índice anterior circular
+                MusicService.currentIndex =
+                    if (MusicService.currentIndex - 1 < 0) targetPlaylist.size - 1
+                    else MusicService.currentIndex - 1
+                song = targetPlaylist[MusicService.currentIndex]
+                playSong()
+            }
         } else {
             song?.let { playSong() }
         }
