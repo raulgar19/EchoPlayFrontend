@@ -47,6 +47,7 @@ class MusicService : Service() {
         var isPrepared: Boolean = false
         var isShuffleMode: Boolean = false
         var isReturningFromPlayerButton: Boolean = false
+        var isFusionMixMode: Boolean = false
         
         // Thread-safe release helper
         @Synchronized

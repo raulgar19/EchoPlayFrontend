@@ -187,7 +187,11 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                 updateServiceNotification() // ✅ Actualizar notificación cuando termina
 
                 if (MusicService.isPlaylistMode) {
-                    playNextInPlaylist()
+                    if (MusicService.isFusionMixMode) {
+                        playNextInFusionMix()
+                    } else {
+                        playNextInNormalPlaylist()
+                    }
                 }
             }
 
@@ -206,7 +210,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    private fun playNextInPlaylist() {
+    private fun playNextInNormalPlaylist() {
         val nextIndex = MusicService.currentIndex + 1
         if (nextIndex < MusicService.playlist.size) {
             MusicService.currentIndex = nextIndex
@@ -216,7 +220,18 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                 playSong()
             }
         } else {
+            // Llegamos al final de la playlist normal
             MusicService.isPlaylistMode = false
+        }
+    }
+
+    private fun playNextInFusionMix() {
+        // Fusion Mix: avance circular continuo, nunca termina
+        MusicService.currentIndex = (MusicService.currentIndex + 1) % MusicService.playlist.size
+        song = MusicService.playlist[MusicService.currentIndex]
+
+        android.os.Handler(android.os.Looper.getMainLooper()).post {
+            playSong()
         }
     }
 
@@ -307,13 +322,23 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
     fun playNext() {
         if (MusicService.isPlaylistMode) {
-            val targetPlaylist = if (MusicService.isShuffleMode) MusicService.shufflePlaylist else MusicService.playlist
-            
-            if (targetPlaylist.isNotEmpty()) {
-                // 🔹 Avanzar al siguiente índice circular
-                MusicService.currentIndex = (MusicService.currentIndex + 1) % targetPlaylist.size
-                song = targetPlaylist[MusicService.currentIndex]
-                playSong()
+            if (MusicService.isFusionMixMode) {
+                // Fusion Mix: avance circular, no respeta shuffle
+                if (MusicService.playlist.isNotEmpty()) {
+                    MusicService.currentIndex = (MusicService.currentIndex + 1) % MusicService.playlist.size
+                    song = MusicService.playlist[MusicService.currentIndex]
+                    playSong()
+                }
+            } else {
+                // Playlist normal: respeta shuffle
+                val targetPlaylist = if (MusicService.isShuffleMode) MusicService.shufflePlaylist else MusicService.playlist
+                
+                if (targetPlaylist.isNotEmpty()) {
+                    // 🔹 Avanzar al siguiente índice circular
+                    MusicService.currentIndex = (MusicService.currentIndex + 1) % targetPlaylist.size
+                    song = targetPlaylist[MusicService.currentIndex]
+                    playSong()
+                }
             }
         } else {
             stopSong()
@@ -322,15 +347,27 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
     fun playPrevious() {
         if (MusicService.isPlaylistMode) {
-            val targetPlaylist = if (MusicService.isShuffleMode) MusicService.shufflePlaylist else MusicService.playlist
-            
-            if (targetPlaylist.isNotEmpty()) {
-                // 🔹 Retroceder al índice anterior circular
-                MusicService.currentIndex =
-                    if (MusicService.currentIndex - 1 < 0) targetPlaylist.size - 1
-                    else MusicService.currentIndex - 1
-                song = targetPlaylist[MusicService.currentIndex]
-                playSong()
+            if (MusicService.isFusionMixMode) {
+                // Fusion Mix: retroceso circular, no respeta shuffle
+                if (MusicService.playlist.isNotEmpty()) {
+                    MusicService.currentIndex =
+                        if (MusicService.currentIndex - 1 < 0) MusicService.playlist.size - 1
+                        else MusicService.currentIndex - 1
+                    song = MusicService.playlist[MusicService.currentIndex]
+                    playSong()
+                }
+            } else {
+                // Playlist normal: respeta shuffle
+                val targetPlaylist = if (MusicService.isShuffleMode) MusicService.shufflePlaylist else MusicService.playlist
+                
+                if (targetPlaylist.isNotEmpty()) {
+                    // 🔹 Retroceder al índice anterior circular
+                    MusicService.currentIndex =
+                        if (MusicService.currentIndex - 1 < 0) targetPlaylist.size - 1
+                        else MusicService.currentIndex - 1
+                    song = targetPlaylist[MusicService.currentIndex]
+                    playSong()
+                }
             }
         } else {
             song?.let { playSong() }

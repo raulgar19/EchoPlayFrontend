@@ -17,10 +17,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -81,8 +83,8 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
 @Composable
 private fun HomeContent(navController: NavController, homeViewModel: HomeViewModel) {
     val selectedItem = homeViewModel.selectedTab
-    val items = listOf("Mis listas", "Buscar")
-    val icons = listOf(Icons.Filled.LibraryMusic, Icons.Default.Search)
+    val items = listOf("Mis listas", "MixLab", "Buscar")
+    val icons = listOf(Icons.Filled.LibraryMusic, Icons.Filled.Science, Icons.Default.Search)
 
     Scaffold(
         bottomBar = {
@@ -140,7 +142,14 @@ private fun HomeContent(navController: NavController, homeViewModel: HomeViewMod
                             .padding(top = 80.dp)
                             .padding(innerPadding)
                     )
-                    1 -> SearchContent(
+                    1 -> MixLabContent(
+                        navController = navController,
+                        homeViewModel = homeViewModel,
+                        modifier = Modifier
+                            .padding(top = 80.dp)
+                            .padding(innerPadding)
+                    )
+                    2 -> SearchContent(
                         navController = navController,
                         homeViewModel = homeViewModel,
                         modifier = Modifier
@@ -435,6 +444,7 @@ fun SearchContent(
                                 val prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
                                 prefs.edit().putInt("songID", song.id).apply()
                                 MusicService.isPlaylistMode = false
+                                MusicService.isFusionMixMode = false // ✅ Desactivar Fusion Mix
                                 navController.navigate("player")
                             }
                     ) {
@@ -553,5 +563,154 @@ fun SearchContent(
                 }
             }
         )
+    }
+}
+
+@Composable
+fun MixLabContent(
+    navController: NavController,
+    homeViewModel: HomeViewModel,
+    modifier: Modifier = Modifier
+) {
+    val playlists = homeViewModel.playlists
+    var selectedPlaylists by remember { mutableStateOf(setOf<Int>()) }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+    ) {
+        Text(
+            text = "Selecciona las playlists que quieras",
+            color = Color.White.copy(alpha = 0.7f),
+            fontSize = 16.sp,
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
+
+        if (playlists.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.8f),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Ups! Todavía no tienes playlists",
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        } else {
+            // Lista de playlists
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(playlists) { playlist ->
+                    val isSelected = playlist.id in selectedPlaylists
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                if (isSelected) Color(0xFF8F12FF).copy(alpha = 0.3f) else Color(0xFF1F1F1F),
+                                RoundedCornerShape(12.dp)
+                            )
+                            .clickable {
+                                selectedPlaylists = if (isSelected) {
+                                    selectedPlaylists - playlist.id
+                                } else {
+                                    selectedPlaylists + playlist.id
+                                }
+                            }
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = playlist.name,
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        
+                        // Checkmark icon
+                        if (isSelected) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "Seleccionada",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Área de playlists seleccionadas
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF1F1F1F), RoundedCornerShape(12.dp))
+                    .padding(20.dp)
+            ) {
+                Text(
+                    text = "${selectedPlaylists.size} playlist(s) seleccionada(s)",
+                    color = Color(0xFF8F12FF),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Text(
+                    text = "Se combinarán y mezclarán aleatoriamente",
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 14.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Botón de reproducir
+            Button(
+                onClick = {
+                    if (selectedPlaylists.isNotEmpty()) {
+                        homeViewModel.createAndPlayFusionMix(selectedPlaylists.toList()) {
+                            navController.navigate("player")
+                        }
+                    }
+                },
+                enabled = selectedPlaylists.size >= 2,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF8F12FF),
+                    disabledContainerColor = Color(0xFF3F3F3F)
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = "Play",
+                    tint = Color.White
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (selectedPlaylists.size < 2) {
+                        "Selecciona al menos 2 playlists"
+                    } else {
+                        "Reproducir MixLab"
+                    },
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
     }
 }

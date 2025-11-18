@@ -107,6 +107,7 @@ fun PlaylistScreen(navController: NavController, playlistViewModel: PlaylistView
                                     MusicService.playlist = songs
                                     MusicService.currentIndex = 0
                                     MusicService.isPlaylistMode = true
+                                    MusicService.isFusionMixMode = false // ✅ Desactivar Fusion Mix
                                     navController.navigate("player")
                                 }
                             }) {
@@ -144,6 +145,7 @@ fun PlaylistScreen(navController: NavController, playlistViewModel: PlaylistView
                                                 val prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
                                                 prefs.edit().putInt("songID", song.id).apply()
                                                 MusicService.isPlaylistMode = false
+                                                MusicService.isFusionMixMode = false // ✅ Desactivar Fusion Mix
                                                 navController.navigate("player")
                                             }
                                             .padding(horizontal = 12.dp),

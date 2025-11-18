@@ -123,4 +123,43 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
+
+    fun createAndPlayFusionMix(playlistIds: List<Int>, onComplete: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                // Obtener todas las canciones de las playlists seleccionadas
+                val allSongs = mutableListOf<Song>()
+                
+                playlistIds.forEach { playlistId ->
+                    try {
+                        val songsFromPlaylist = RetrofitInstance.api.getSongsFromPlaylist(playlistId)
+                        allSongs.addAll(songsFromPlaylist)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+                
+                // Eliminar duplicados basándose en el ID de la canción
+                val uniqueSongs = allSongs.distinctBy { it.id }
+                
+                // Mezclar aleatoriamente
+                val shuffledSongs = uniqueSongs.shuffled()
+                
+                if (shuffledSongs.isNotEmpty()) {
+                    // Configurar el MusicService para modo Fusion Mix
+                    com.example.echoplay_frontend.data.services.MusicService.playlist = shuffledSongs
+                    com.example.echoplay_frontend.data.services.MusicService.currentIndex = 0
+                    com.example.echoplay_frontend.data.services.MusicService.isPlaylistMode = true
+                    com.example.echoplay_frontend.data.services.MusicService.isFusionMixMode = true
+                    com.example.echoplay_frontend.data.services.MusicService.isShuffleMode = false
+                    com.example.echoplay_frontend.data.services.MusicService.shufflePlaylist = emptyList()
+                    
+                    // Llamar al callback
+                    onComplete()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 }

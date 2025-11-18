@@ -50,14 +50,21 @@ class MainActivity : ComponentActivity() {
                     updateAvailable?.let { version ->
                         AlertDialog(
                             onDismissRequest = { },
-                            title = { Text("Nueva versión disponible") },
-                            text = { Text("Se ha detectado la versión $version de EchoPlay. Debes actualizar para continuar.") },
+                            title = { Text("🎵 Nueva versión disponible") },
+                            text = { Text("Se ha detectado la versión $version de EchoPlay.\n\nActualiza ahora para disfrutar de las últimas mejoras y correcciones.") },
                             confirmButton = {
                                 TextButton(onClick = {
                                     downloadAndInstall()
                                     updateAvailable = null
                                 }) {
-                                    Text("Actualizar")
+                                    Text("Actualizar ahora")
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = {
+                                    updateAvailable = null
+                                }) {
+                                    Text("Más tarde")
                                 }
                             }
                         )
@@ -66,11 +73,17 @@ class MainActivity : ComponentActivity() {
                     updateResult?.let { result ->
                         AlertDialog(
                             onDismissRequest = { updateResult = null },
-                            title = { Text("Resultado de la actualización") },
+                            title = { 
+                                Text(
+                                    if (result.contains("Error", ignoreCase = true)) "❌ Error" 
+                                    else if (result.contains("Instalando", ignoreCase = true)) "⏳ Actualizando"
+                                    else "✅ Actualización"
+                                ) 
+                            },
                             text = { Text(result) },
                             confirmButton = {
                                 TextButton(onClick = { updateResult = null }) {
-                                    Text("OK")
+                                    Text("Entendido")
                                 }
                             }
                         )
@@ -90,13 +103,17 @@ class MainActivity : ComponentActivity() {
                     val latest = response.body()
                     if (latest != null && isVersionNewer(latest.latest_version, Version.CURRENT)) {
                         updateAvailable = latest.latest_version
-                        apkUrl = latest.apk_url
+                        apkUrl = latest.url
                     }
+                } else {
+                    // Silenciar error de verificación para no molestar al usuario
+                    println("⚠️ No se pudo verificar actualizaciones: ${response.code()}")
                 }
             }
 
             override fun onFailure(call: Call<VersionResponse>, t: Throwable) {
-                updateResult = "Error al verificar versión: ${t.message}"
+                // Silenciar error de red para no molestar al usuario
+                println("⚠️ Error de red al verificar actualizaciones: ${t.message}")
             }
         })
     }
@@ -118,8 +135,42 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private fun downloadAndInstall() {
-        val url = apkUrl ?: return
-        val request = DownloadManager.Request(Uri.parse(url))
+        val url = apkUrl ?: run {
+            updateResult = "Error: No se encontró la URL de descarga"
+            return
+        }
+
+        // ✅ Convertir URL de Google Drive a descarga directa
+        val downloadUrl = if (url.contains("drive.google.com")) {
+            // Extraer el ID del archivo de Google Drive
+            val fileId = when {
+                url.contains("id=") -> url.substringAfter("id=").substringBefore("&")
+                url.contains("/d/") -> url.substringAfter("/d/").substringBefore("/")
+                else -> {
+                    updateResult = "Error: URL de Google Drive inválida"
+                    return
+                }
+            }
+            // Usar el endpoint directo de Google Drive que bypasea la página de confirmación
+            "https://drive.usercontent.google.com/download?id=$fileId&export=download&confirm=t"
+        } else {
+            url
+        }
+
+        // ✅ Verificar permisos de instalación antes de descargar (Android 8.0+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (!packageManager.canRequestPackageInstalls()) {
+                val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                    data = Uri.parse("package:$packageName")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                startActivity(intent)
+                updateResult = "Debes habilitar 'Permitir desde esta fuente' en Ajustes para instalar actualizaciones."
+                return
+            }
+        }
+
+        val request = DownloadManager.Request(Uri.parse(downloadUrl))
             .setTitle("Actualización EchoPlay")
             .setDescription("Descargando nueva versión...")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
@@ -128,59 +179,80 @@ class MainActivity : ComponentActivity() {
                 Environment.DIRECTORY_DOWNLOADS,
                 "echoplay-latest.apk"
             )
+            .setMimeType("application/vnd.android.package-archive")
+            .setAllowedOverMetered(true)
+            .setAllowedOverRoaming(true)
 
         val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        manager.enqueue(request)
+        val downloadId = manager.enqueue(request)
 
         val onComplete = object : BroadcastReceiver() {
-            @RequiresApi(Build.VERSION_CODES.O)
-            @SuppressLint("UnspecifiedRegisterReceiverFlag")
             override fun onReceive(ctxt: Context?, intent: Intent?) {
+                val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
+                if (id != downloadId) return
+
                 val file = File(
                     getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
                     "echoplay-latest.apk"
                 )
-                val uri = FileProvider.getUriForFile(
-                    applicationContext,
-                    "${packageName}.provider",
-                    file
-                )
+
+                if (!file.exists()) {
+                    updateResult = "Error: No se pudo descargar el archivo de actualización"
+                    unregisterReceiver(this)
+                    return
+                }
 
                 try {
-                    // ✅ Verificar permiso antes de instalar
-                    if (packageManager.canRequestPackageInstalls()) {
-                        val installIntent = Intent(Intent.ACTION_VIEW).apply {
-                            setDataAndType(uri, "application/vnd.android.package-archive")
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        startActivity(installIntent)
-
-                        val deleted = file.delete()
-                        updateResult = if (deleted) {
-                            "La actualización se instaló correctamente."
-                        } else {
-                            "La actualización se instaló correctamente, pero no se pudo borrar el archivo."
-                        }
+                    val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        // Android 7.0+ requiere FileProvider
+                        FileProvider.getUriForFile(
+                            applicationContext,
+                            "${packageName}.provider",
+                            file
+                        )
                     } else {
-                        // Redirigir al usuario a ajustes
-                        val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
-                            data = Uri.parse("package:$packageName")
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        startActivity(intent)
-                        updateResult = "Debes habilitar 'Permitir desde esta fuente' para instalar actualizaciones."
+                        Uri.fromFile(file)
                     }
+
+                    val installIntent = Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(uri, "application/vnd.android.package-archive")
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                        }
+                    }
+
+                    startActivity(installIntent)
+                    updateResult = "Instalando actualización..."
+
+                    // ✅ Limpiar el archivo después de un delay
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        try {
+                            if (file.exists()) file.delete()
+                        } catch (e: Exception) {
+                            println("⚠️ No se pudo eliminar el APK: ${e.message}")
+                        }
+                    }, 3000)
+
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    updateResult = "Error al instalar la actualización: ${e.message}"
+                    updateResult = "Error al instalar: ${e.localizedMessage ?: e.message}"
                 } finally {
-                    unregisterReceiver(this)
+                    try {
+                        unregisterReceiver(this)
+                    } catch (e: Exception) {
+                        // Ignorar si ya fue desregistrado
+                    }
                 }
             }
         }
 
-        registerReceiver(onComplete, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(onComplete, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(onComplete, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+        }
     }
 
     override fun onDestroy() {
